@@ -80,6 +80,47 @@ html, body {
 }
 
 #topbar button:hover { border-color: var(--accent); }
+
+#locate.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Znacznik pozycji: kropka + stożek kierunku obracany według kompasu / GPS. */
+.user-marker { background: none; border: 0; }
+
+.user-arrow {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  transform-origin: 50% 50%;
+  transition: transform .25s ease-out;
+}
+
+.user-dot {
+  position: absolute;
+  left: 13px;
+  top: 13px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1f6feb;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, .35), 0 1px 4px rgba(0, 0, 0, .4);
+}
+
+.user-cone {
+  position: absolute;
+  left: 8px;
+  top: -4px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to top, rgba(31, 111, 235, .55), rgba(31, 111, 235, 0));
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+.user-arrow.no-heading .user-cone { display: none; }
 #menu-toggle { display: none; }
 
 #panel {

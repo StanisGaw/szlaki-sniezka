@@ -59,6 +59,17 @@ const summitIcon = L.divIcon({
 
 let userMarker = null;
 let userCircle = null;
+let watchId = null;
+let compassHeading = null;
+let follow = true;
+let lastFix = null;
+
+const userIcon = L.divIcon({
+  className: 'user-marker',
+  html: '<div class="user-arrow" id="user-arrow"><div class="user-dot"></div><div class="user-cone"></div></div>',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+});
 
 function haversineKm(a, b) {
   const R = 6371;
@@ -175,9 +186,12 @@ function render() {
   }
 
   const total = state.trails.length;
-  el.summary.textContent = visible.length === total
+  const count = visible.length === total
     ? `Wszystkie szlaki: ${total}`
     : `Pokazuję ${visible.length} z ${total} szlaków`;
+  // Podczas śledzenia w tym miejscu jest status GPS (updateHeading), więc licznik idzie do listy.
+  if (watchId === null) el.summary.textContent = count;
+  el.list.setAttribute('aria-label', count);
 }
 
 function selectTrail(id, { fly }) {
@@ -195,35 +209,124 @@ function locateUser() {
     el.summary.textContent = 'Ta przeglądarka nie udostępnia geolokalizacji.';
     return;
   }
-  el.locate.disabled = true;
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      el.locate.disabled = false;
-      const { latitude, longitude, accuracy } = pos.coords;
-      state.userLatLng = [latitude, longitude];
-      if (userMarker) map.removeLayer(userMarker);
-      if (userCircle) map.removeLayer(userCircle);
-      userMarker = L.circleMarker(state.userLatLng, {
-        radius: 7, color: '#fff', weight: 2, fillColor: '#1f6feb', fillOpacity: 1,
-      }).addTo(map).bindPopup('Twoja lokalizacja');
-      userCircle = L.circle(state.userLatLng, {
-        radius: accuracy, color: '#1f6feb', weight: 1, fillOpacity: 0.08,
-      }).addTo(map);
-      map.setView(state.userLatLng, 14);
-      render();
-    },
-    (err) => {
-      el.locate.disabled = false;
-      const reasons = {
-        1: 'Brak zgody na dostęp do lokalizacji.',
-        2: 'Nie udało się ustalić lokalizacji.',
-        3: 'Ustalanie lokalizacji trwało zbyt długo.',
-      };
-      el.summary.textContent = reasons[err.code] || 'Nie udało się ustalić lokalizacji.';
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-  );
+  if (watchId !== null) {
+    // Śledzenie trwa: po ręcznym przesunięciu mapy wracamy do podążania, w innym razie zatrzymujemy.
+    if (!follow && state.userLatLng) {
+      follow = true;
+      map.panTo(state.userLatLng);
+      return;
+    }
+    stopTracking();
+    return;
+  }
+  startTracking();
 }
+
+function startTracking() {
+  el.locate.classList.add('active');
+  el.locate.setAttribute('aria-label', 'Zatrzymaj śledzenie pozycji');
+  follow = true;
+  requestCompass();
+  watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 2000,
+  });
+}
+
+function stopTracking() {
+  navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+  el.locate.classList.remove('active');
+  el.locate.setAttribute('aria-label', 'Śledź moją pozycję');
+  window.removeEventListener('deviceorientationabsolute', onOrientation);
+  window.removeEventListener('deviceorientation', onOrientation);
+  compassHeading = null;
+  el.summary.textContent = 'Śledzenie zatrzymane.';
+}
+
+function onPosition(pos) {
+  const { latitude, longitude, accuracy, heading, speed } = pos.coords;
+  state.userLatLng = [latitude, longitude];
+  lastFix = { heading, speed, accuracy, time: pos.timestamp };
+
+  if (!userMarker) {
+    userMarker = L.marker(state.userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+    userCircle = L.circle(state.userLatLng, {
+      radius: accuracy, color: '#1f6feb', weight: 1, fillOpacity: 0.08,
+    }).addTo(map);
+    map.setView(state.userLatLng, 15);
+  } else {
+    userMarker.setLatLng(state.userLatLng);
+    userCircle.setLatLng(state.userLatLng).setRadius(accuracy);
+    if (follow) map.panTo(state.userLatLng, { animate: true });
+  }
+  updateHeading();
+  render();
+}
+
+function onPositionError(err) {
+  const reasons = {
+    1: 'Brak zgody na dostęp do lokalizacji.',
+    2: 'Nie udało się ustalić lokalizacji.',
+    3: 'Ustalanie lokalizacji trwa zbyt długo — czekam na sygnał GPS.',
+  };
+  el.summary.textContent = reasons[err.code] || 'Nie udało się ustalić lokalizacji.';
+  if (err.code === 1) stopTracking();
+}
+
+/* Kierunek: najpierw kompas telefonu, a gdy go nie ma — kierunek ruchu z GPS. */
+function requestCompass() {
+  const attach = () => {
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', onOrientation);
+    } else {
+      window.addEventListener('deviceorientation', onOrientation);
+    }
+  };
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then((r) => { if (r === 'granted') attach(); }).catch(() => {});
+  } else {
+    attach();
+  }
+}
+
+function onOrientation(e) {
+  let h = null;
+  if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;
+  else if (e.absolute && typeof e.alpha === 'number') h = (360 - e.alpha) % 360;
+  if (h !== null) {
+    compassHeading = h;
+    updateHeading();
+  }
+}
+
+function currentHeading() {
+  if (compassHeading !== null) return compassHeading;
+  if (lastFix && typeof lastFix.heading === 'number' && !Number.isNaN(lastFix.heading) &&
+      lastFix.speed > 0.5) return lastFix.heading;
+  return null;
+}
+
+function updateHeading() {
+  const arrow = document.getElementById('user-arrow');
+  if (!arrow) return;
+  const h = currentHeading();
+  arrow.classList.toggle('no-heading', h === null);
+  if (h !== null) arrow.style.transform = `rotate(${h}deg)`;
+
+  if (lastFix) {
+    const parts = [`Dokładność ±${Math.round(lastFix.accuracy)} m`];
+    if (h !== null) parts.push(`kierunek ${Math.round(h)}°`);
+    if (lastFix.speed > 0.3) parts.push(`${(lastFix.speed * 3.6).toFixed(1)} km/h`);
+    el.summary.textContent = parts.join(' · ');
+  }
+}
+
+/* Przesunięcie mapy ręką wyłącza podążanie; ponowne kliknięcie 📍 je włącza. */
+map.on('dragstart', () => { follow = false; });
+el.locate.addEventListener('dblclick', (e) => e.preventDefault());
 
 el.search.addEventListener('input', () => {
   state.query = el.search.value.trim().toLowerCase();
