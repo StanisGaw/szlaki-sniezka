@@ -203,6 +203,29 @@ html, body {
   color: var(--muted);
 }
 
+.offline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+#offline-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#offline-btn:hover { border-color: var(--accent); }
+#offline-btn:disabled { opacity: .6; cursor: default; }
+#offline-status { font-size: 12.5px; color: var(--muted); }
+
 #trail-list {
   list-style: none;
   margin: 0;

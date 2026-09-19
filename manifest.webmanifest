@@ -1,0 +1,18 @@
+{
+  "name": "Szlaki na Śnieżkę",
+  "short_name": "Śnieżka",
+  "description": "Mapa szlaków turystycznych na Śnieżkę z filtrowaniem i śledzeniem pozycji. Działa offline.",
+  "lang": "pl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1f6feb",
+  "theme_color": "#1f6feb",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

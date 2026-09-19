@@ -9,7 +9,19 @@ Aplikacja jest statyczna — sam HTML, CSS i JavaScript, bez backendu i bez kluc
 - **57 szlaków** w promieniu 6 km od szczytu, pobranych z OpenStreetMap,
 - filtrowanie po **kolorze szlaku**, wyszukiwarka po nazwie i po miejscowościach,
 - **geolokalizacja**: pokazanie swojej pozycji, dystans do każdego szlaku i filtr „tylko w pobliżu mnie (5 km)”,
+- **śledzenie pozycji** z kierunkiem (kompas telefonu lub kurs z GPS), mapa podąża za użytkownikiem,
+- **PWA działająca offline**: po dodaniu do ekranu głównego aplikacja, szlaki i Leaflet są w cache;
+  przycisk „Pobierz mapę offline” zapisuje 407 kafelków (zoom 11–15) dla okolicy Śnieżki,
+  a kafelki oglądane online zapamiętują się same (do 3000),
 - widok listy i mapy, działa na telefonie, obsługuje tryb ciemny.
+
+## Instalacja na telefonie
+
+1. Otwórz https://stanisgaw.github.io/szlaki-sniezka/ w Safari (iPhone) lub Chrome (Android).
+2. iPhone: Udostępnij → „Do ekranu początkowego”. Android: menu ⋮ → „Dodaj do ekranu głównego” / „Zainstaluj”.
+3. Jeszcze z internetem kliknij **Pobierz mapę offline** — potem mapa działa bez zasięgu.
+
+Po zmianie plików aplikacji podbij `VERSION` w `sw.js`, żeby telefony pobrały nową wersję.
 
 ## Uruchomienie lokalnie
 

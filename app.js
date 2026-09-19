@@ -346,7 +346,91 @@ el.menuToggle.addEventListener('click', () => {
   el.menuToggle.setAttribute('aria-expanded', String(open));
 });
 
+/* ---------- Tryb offline (PWA) ---------- */
+
+const OFFLINE_BBOX = { south: 50.68, west: 15.63, north: 50.78, east: 15.82 };
+const OFFLINE_ZOOMS = [11, 12, 13, 14, 15];
+const SUBDOMAINS = ['a', 'b', 'c'];
+
+const offlineBtn = document.getElementById('offline-btn');
+const offlineStatus = document.getElementById('offline-status');
+
+function lonToX(lon, z) { return Math.floor(((lon + 180) / 360) * 2 ** z); }
+function latToY(lat, z) {
+  const r = (lat * Math.PI) / 180;
+  return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
+}
+
+function currentTileTemplate() {
+  for (const [name, layer] of Object.entries(baseLayers)) {
+    if (map.hasLayer(layer)) return { name, url: layer._url };
+  }
+  return { name: 'OpenTopoMap', url: baseLayers.OpenTopoMap._url };
+}
+
+function tileUrlsForArea(template) {
+  const urls = [];
+  let i = 0;
+  for (const z of OFFLINE_ZOOMS) {
+    const x0 = lonToX(OFFLINE_BBOX.west, z), x1 = lonToX(OFFLINE_BBOX.east, z);
+    const y0 = latToY(OFFLINE_BBOX.north, z), y1 = latToY(OFFLINE_BBOX.south, z);
+    for (let x = x0; x <= x1; x++) {
+      for (let y = y0; y <= y1; y++) {
+        const s = SUBDOMAINS[i++ % SUBDOMAINS.length];
+        urls.push(template.replace('{s}', s).replace('{z}', z).replace('{x}', x).replace('{y}', y));
+      }
+    }
+  }
+  return urls;
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    offlineBtn.disabled = true;
+    offlineStatus.textContent = 'Ta przeglądarka nie obsługuje trybu offline.';
+    return;
+  }
+  try {
+    await navigator.serviceWorker.register('sw.js');
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      const m = e.data || {};
+      if (m.type === 'prefetch-progress') {
+        offlineStatus.textContent = `Pobieram kafelki: ${m.done}/${m.total}`;
+      } else if (m.type === 'prefetch-done') {
+        offlineBtn.disabled = false;
+        offlineStatus.textContent = m.failed
+          ? `Gotowe, nie udało się pobrać ${m.failed} z ${m.total} kafelków.`
+          : `Mapa okolicy Śnieżki zapisana (${m.total} kafelków).`;
+      }
+    });
+  } catch (err) {
+    offlineStatus.textContent = `Tryb offline niedostępny: ${err.message}`;
+  }
+}
+
+offlineBtn.addEventListener('click', async () => {
+  const reg = await navigator.serviceWorker.ready;
+  const sw = reg.active;
+  if (!sw) { offlineStatus.textContent = 'Poczekaj chwilę i spróbuj ponownie.'; return; }
+  if (!navigator.onLine) { offlineStatus.textContent = 'Brak internetu — pobieranie wymaga połączenia.'; return; }
+  const tpl = currentTileTemplate();
+  const urls = tileUrlsForArea(tpl.url);
+  offlineBtn.disabled = true;
+  offlineStatus.textContent = `Pobieram ${urls.length} kafelków (${tpl.name})…`;
+  sw.postMessage({ type: 'prefetch-tiles', urls });
+});
+
+function updateOnlineBadge() {
+  document.body.classList.toggle('offline', !navigator.onLine);
+  if (!navigator.onLine) offlineStatus.textContent = 'Jesteś offline — mapa z zapisanych kafelków.';
+  else if (offlineStatus.textContent.startsWith('Jesteś offline')) offlineStatus.textContent = '';
+}
+window.addEventListener('online', updateOnlineBadge);
+window.addEventListener('offline', updateOnlineBadge);
+
 async function init() {
+  registerServiceWorker();
+  updateOnlineBadge();
   try {
     const res = await fetch('trails.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
