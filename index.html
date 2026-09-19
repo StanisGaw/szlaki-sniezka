@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Szlaki na Śnieżkę</title>
+<meta name="description" content="Mapa szlaków turystycznych na Śnieżkę i w okolicy — dane z OpenStreetMap, filtrowanie po kolorach szlaków i geolokalizacja.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛰️</text></svg>">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <button id="menu-toggle" aria-label="Pokaż listę szlaków" aria-expanded="false">☰</button>
+    <h1>Szlaki na Śnieżkę</h1>
+    <button id="locate" aria-label="Pokaż moją lokalizację">📍</button>
+  </header>
+
+  <aside id="panel" aria-label="Filtry i lista szlaków">
+    <section id="filters">
+      <h2>Kolor szlaku</h2>
+      <div id="color-filters" class="chips"></div>
+      <label class="search">
+        <span class="visually-hidden">Szukaj szlaku</span>
+        <input type="search" id="search" placeholder="Szukaj po nazwie lub miejscu…" autocomplete="off">
+      </label>
+      <label class="near">
+        <input type="checkbox" id="near-me">
+        <span>Tylko w pobliżu mnie (5 km)</span>
+      </label>
+      <p id="summary" role="status"></p>
+    </section>
+    <ul id="trail-list"></ul>
+    <footer id="credits">
+      Dane: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL),
+      pobrane przez Overpass API. Mapa: OpenStreetMap i OpenTopoMap.
+    </footer>
+  </aside>
+
+  <main id="map" aria-label="Mapa szlaków"></main>
+</div>
+
+<div id="loading">Wczytuję szlaki…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="app.js"></script>
+</body>
+</html>
