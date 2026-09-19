@@ -98,29 +98,61 @@ html, body {
   transition: transform .25s ease-out;
 }
 
+/* Pulsująca poświata pod kropką. */
+.user-arrow::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(66, 133, 244, .45) 0%, rgba(66, 133, 244, 0) 70%);
+  animation: user-pulse 2s ease-out infinite;
+}
+
+@keyframes user-pulse {
+  0% { transform: scale(.6); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
 .user-dot {
   position: absolute;
-  left: 13px;
-  top: 13px;
-  width: 14px;
-  height: 14px;
+  left: 12px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #1f6feb;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 2px rgba(31, 111, 235, .35), 0 1px 4px rgba(0, 0, 0, .4);
+  background: radial-gradient(circle at 35% 30%, #8ab4ff 0%, #4285f4 45%, #1a56d6 100%);
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1px rgba(26, 86, 214, .5), 0 2px 6px rgba(0, 0, 0, .45);
 }
 
 .user-cone {
   position: absolute;
-  left: 8px;
-  top: -4px;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(to top, rgba(31, 111, 235, .55), rgba(31, 111, 235, 0));
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  left: 5px;
+  top: -8px;
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(to top, rgba(66, 133, 244, .65), rgba(66, 133, 244, 0));
+  clip-path: polygon(50% 100%, 12% 0, 88% 0);
 }
 
 .user-arrow.no-heading .user-cone { display: none; }
+
+/* Przycisk „wyśrodkuj na mnie” na mapie (kontrolka Leaflet). */
+.leaflet-control-center a {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+  line-height: 1;
+  color: #333;
+  text-decoration: none;
+}
+
+.leaflet-control-center a.active { color: #4285f4; }
 #menu-toggle { display: none; }
 
 #panel {

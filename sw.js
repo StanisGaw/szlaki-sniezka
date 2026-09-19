@@ -1,6 +1,6 @@
 /* Service worker: aplikacja i dane z cache, kafelki mapy zapamiętywane w miarę oglądania. */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const APP_CACHE = `app-${VERSION}`;
 const TILE_CACHE = 'tiles-v1';
 const MAX_RUNTIME_TILES = 3000;

@@ -232,6 +232,7 @@ function startTracking() {
     timeout: 15000,
     maximumAge: 2000,
   });
+  updateCenterButton();
 }
 
 function stopTracking() {
@@ -242,6 +243,7 @@ function stopTracking() {
   window.removeEventListener('deviceorientationabsolute', onOrientation);
   window.removeEventListener('deviceorientation', onOrientation);
   compassHeading = null;
+  updateCenterButton();
   el.summary.textContent = 'Śledzenie zatrzymane.';
 }
 
@@ -324,8 +326,40 @@ function updateHeading() {
   }
 }
 
-/* Przesunięcie mapy ręką wyłącza podążanie; ponowne kliknięcie 📍 je włącza. */
-map.on('dragstart', () => { follow = false; });
+/* Jeden przycisk na mapie: wyśrodkuj na mojej pozycji (i włącz śledzenie, jeśli nie trwa). */
+function centerOnMe() {
+  if (watchId === null) {
+    startTracking();
+    return;
+  }
+  follow = true;
+  if (state.userLatLng) map.setView(state.userLatLng, Math.max(map.getZoom(), 15), { animate: true });
+  updateCenterButton();
+}
+
+let centerLink = null;
+const CenterControl = L.Control.extend({
+  options: { position: 'bottomright' },
+  onAdd() {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-center');
+    centerLink = L.DomUtil.create('a', '', div);
+    centerLink.href = '#';
+    centerLink.title = 'Wyśrodkuj na mojej pozycji';
+    centerLink.setAttribute('aria-label', centerLink.title);
+    centerLink.textContent = '⌖';
+    L.DomEvent.on(centerLink, 'click', (e) => { L.DomEvent.stop(e); centerOnMe(); });
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  },
+});
+map.addControl(new CenterControl());
+
+function updateCenterButton() {
+  if (centerLink) centerLink.classList.toggle('active', watchId !== null && follow);
+}
+
+/* Przesunięcie mapy ręką wyłącza podążanie; ⌖ lub 📍 je włącza. */
+map.on('dragstart', () => { follow = false; updateCenterButton(); });
 el.locate.addEventListener('dblclick', (e) => e.preventDefault());
 
 el.search.addEventListener('input', () => {
